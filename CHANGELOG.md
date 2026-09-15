@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.1
+- Fixed false-positive sync where the extension parsed its own widget.
+- Native Usage detection now requires the ChatGPT `Plan limits` panel.
+- Fixed `Unknown` and concatenated reset text issue.
+- Added migration cleanup for corrupted cached v1.1 reset strings.
+- Added defensive reset-text truncation.
+- Improved Settings/Usage open-wait-restore flow.
+
 ## v1.1.0
 - Added always-visible mini pill mode.
 - Added warning state below 35% remaining.
