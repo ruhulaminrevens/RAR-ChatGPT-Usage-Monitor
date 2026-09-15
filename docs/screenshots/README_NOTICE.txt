@@ -1,0 +1,1 @@
+Screenshot assets refreshed from the validated v1.2.0 UI on 2026-09-15.
