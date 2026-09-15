@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RAR ChatGPT Usage Monitor",
-  "version": "1.1.1",
-  "description": "Always-visible ChatGPT usage meter with reliable native Usage-panel sync, reset countdowns, mini mode and low-limit alerts.",
+  "version": "1.1.2",
+  "description": "Always-visible ChatGPT usage meter with reliable native Usage sync, fully scoped UI styles, mini mode and low-limit alerts.",
   "permissions": [
     "storage",
     "notifications"
