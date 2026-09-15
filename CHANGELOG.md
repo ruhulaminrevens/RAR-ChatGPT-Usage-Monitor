@@ -1,7 +1,16 @@
 # Changelog
 
+## v1.2.0
+- Promoted the stable v1.1.3 code line into a polished public release.
+- Added optional GitHub `version.json` update checks with a manual **Check now** action.
+- Added an update-available badge/link without adding a background service worker.
+- Prevented automatic AudioContext startup before user interaction.
+- Added compatible v1.1 local-state migration.
+- Added version/status badges, release notes, screenshots, installation, privacy and troubleshooting docs.
+- Preserved native Usage parsing and fully scoped CSS from the validated stable build.
+
 ## v1.1.3
-- Removed MV3 background service worker to eliminate Chrome `Status code: 15` registration errors.
+- Removed MV3 background service worker to eliminate service-worker-related install noise.
 - Removed `notifications` permission/background process.
 - Replaced OS notifications with in-page on-screen warning toasts.
 - Kept sound alert, warning/critical states, mini mode and native Usage sync.
@@ -10,30 +19,14 @@
 - Fixed global CSS leakage that styled ChatGPT page elements outside the widget.
 - Scoped all UI selectors under `#rar-chatgpt-usage-widget`.
 - Replaced generic widget semantic tags with widget-specific classes.
-- Preserved the native Usage-panel sync fix from v1.1.1.
 
 ## v1.1.1
-- Fixed false-positive sync where the extension parsed its own widget.
-- Native Usage detection now requires the ChatGPT `Plan limits` panel.
-- Fixed `Unknown` and concatenated reset text issue.
-- Added migration cleanup for corrupted cached v1.1 reset strings.
-- Added defensive reset-text truncation.
-- Improved Settings/Usage open-wait-restore flow.
+- Prevented the extension from parsing its own widget as Usage data.
+- Native Usage detection requires the ChatGPT `Plan limits` panel.
+- Fixed Unknown/concatenated reset text and migration cleanup.
 
 ## v1.1.0
-- Added always-visible mini pill mode.
-- Added warning state below 35% remaining.
-- Added critical state below 20% remaining.
-- Added desktop notifications.
-- Added optional sound alert.
-- Added 5/10/15/30 minute auto-refresh choices.
-- Added persistent widget mode and position.
-- Improved Usage-page parsing and `#settings/Usage` navigation.
-- Improved glass UI, progress states, responsiveness, and sync status.
+- Added mini mode, threshold alerts, sound, auto-refresh and position memory.
 
 ## v1.0.0
 - Initial floating usage widget.
-- 5-hour and weekly usage meters.
-- Reset countdown display.
-- Manual refresh.
-- Draggable placement.
