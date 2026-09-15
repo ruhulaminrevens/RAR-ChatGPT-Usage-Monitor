@@ -9,11 +9,20 @@ A lightweight Chrome/Chromium extension that keeps your ChatGPT **5-hour** and *
 
 ## Screenshots
 
-### Full widget
-![Full widget](docs/screenshots/full-widget.png)
+<table>
+  <tr>
+    <td align="center"><strong>Full widget</strong></td>
+    <td align="center"><strong>Settings expanded</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/full-widget.png" alt="RAR ChatGPT Usage Monitor full widget" width="355"></td>
+    <td align="center"><img src="docs/screenshots/settings-widget.png" alt="RAR ChatGPT Usage Monitor settings expanded" width="345"></td>
+  </tr>
+</table>
 
 ### Mini mode
-![Mini mode](docs/screenshots/mini-mode.png)
+
+<img src="docs/screenshots/mini-mode.png" alt="RAR ChatGPT Usage Monitor mini mode" width="245">
 
 ## v1.2.0 highlights
 
@@ -31,7 +40,7 @@ A lightweight Chrome/Chromium extension that keeps your ChatGPT **5-hour** and *
 
 ## Installation
 
-1. Download `RAR_ChatGPT_Usage_Monitor_v1.2.0.zip`.
+1. Download `RAR_ChatGPT_Usage_Monitor_v1.2.0.zip` from the [v1.2.0 release](https://github.com/ruhulaminrevens/RAR-ChatGPT-Usage-Monitor/releases/tag/v1.2.0).
 2. Extract it.
 3. Open `chrome://extensions/`.
 4. Enable **Developer mode**.
