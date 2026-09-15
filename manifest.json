@@ -3,39 +3,19 @@
   "name": "RAR ChatGPT Usage Monitor",
   "version": "1.1.0",
   "description": "Always-visible ChatGPT usage meter with 5-hour/weekly limits, reset countdown, low-limit alerts and mini mode.",
-  "permissions": [
-    "storage",
-    "notifications"
-  ],
-  "host_permissions": [
-    "https://chatgpt.com/*",
-    "https://*.chatgpt.com/*"
-  ],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://chatgpt.com/*",
-        "https://*.chatgpt.com/*"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "css": [
-        "styles.css"
-      ],
-      "run_at": "document_idle"
-    }
-  ],
-  "action": {
-    "default_title": "RAR ChatGPT Usage Monitor"
-  },
+  "permissions": ["storage", "notifications"],
+  "host_permissions": ["https://chatgpt.com/*", "https://*.chatgpt.com/*"],
+  "background": {"service_worker": "background.js"},
+  "content_scripts": [{
+    "matches": ["https://chatgpt.com/*", "https://*.chatgpt.com/*"],
+    "js": ["content.js"],
+    "css": ["styles.css"],
+    "run_at": "document_idle"
+  }],
+  "action": {"default_title": "RAR ChatGPT Usage Monitor"},
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "48": "icons/icon48.png"
   }
 }
