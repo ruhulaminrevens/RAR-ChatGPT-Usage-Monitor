@@ -3,9 +3,9 @@
 
   const K='rar_usage_v11', U='rar_ui_v11', A='rar_alert_v11';
   const D={five:{percent:null,reset:'Unknown'},week:{percent:null,reset:'Unknown'},updated:null,status:'Waiting for valid sync…'};
-  const UI={mode:'full',top:105,right:18,minutes:10,desktop:true,sound:true};
+  const UI={mode:'full',top:105,right:18,minutes:10,visual:true,sound:true};
 
-  let d={...D},ui={...UI},alerts={five:'normal',week:'normal'},root,body,status,mini,syncing=false,timer;
+  let d={...D},ui={...UI},alerts={five:'normal',week:'normal'},root,panel,body,status,mini,syncing=false,timer;
 
   const $=(s,p=document)=>p.querySelector(s);
   const wait=m=>new Promise(r=>setTimeout(r,m));
@@ -23,8 +23,6 @@
     ui={...UI,...x[U]};
     alerts={five:'normal',week:'normal',...x[A]};
 
-    // v1.1 could accidentally capture this widget's own text as the reset value.
-    // Clean any obviously corrupted legacy value before rendering.
     for(const key of ['five','week']){
       if(typeof d[key].reset!=='string' || d[key].reset.length>32 || /Weekly limit|Updated:|Auto:/i.test(d[key].reset)){
         d[key].reset='Unknown';
@@ -56,7 +54,7 @@
     root.dataset.level=levels.includes('critical')?'critical':levels.includes('warning')?'warning':'normal';
 
     body.innerHTML=row('5-hour limit',d.five)+row('Weekly limit',d.week)+
-      `<footer>Updated: ${d.updated?new Date(d.updated).toLocaleString():'Never'}<span>Auto: ${ui.minutes} min</span></footer>`;
+      `<div class="rar-footer">Updated: ${d.updated?new Date(d.updated).toLocaleString():'Never'}<span>Auto: ${ui.minutes} min</span></div>`;
 
     mini.innerHTML=`<b>RAR</b><span>5H <strong>${d.five.percent??'?'}%</strong></span><span>W <strong>${d.week.percent??'?'}%</strong></span>`;
     status.textContent=d.status;
@@ -72,40 +70,41 @@
     root=document.createElement('div');
     root.id='rar-chatgpt-usage-widget';
     root.innerHTML=`<div class="rar-card">
-      <header id="rar-drag">
+      <div class="rar-header" id="rar-drag">
         <div class="rar-title">ChatGPT Usage</div>
         <div class="rar-mini"></div>
-        <nav>
-          <button id="rar-refresh" title="Sync usage">↻</button>
-          <button id="rar-mode" title="Mini / full mode">—</button>
-          <button id="rar-settings" title="Settings">⚙</button>
-        </nav>
-      </header>
+        <div class="rar-nav">
+          <button class="rar-btn" id="rar-refresh" title="Sync usage">↻</button>
+          <button class="rar-btn" id="rar-mode" title="Mini / full mode">—</button>
+          <button class="rar-btn" id="rar-settings-toggle" title="Settings">⚙</button>
+        </div>
+      </div>
       <div class="rar-status"></div>
-      <main></main>
-      <aside hidden>
-        <label>Desktop alerts <input id="rar-desktop" type="checkbox"></label>
-        <label>Sound alert <input id="rar-sound" type="checkbox"></label>
-        <label>Auto refresh <select id="rar-mins">${[5,10,15,30].map(n=>`<option>${n}</option>`).join('')}</select></label>
+      <div class="rar-main"></div>
+      <div class="rar-aside" hidden>
+        <label class="rar-setting-row">On-screen alerts <input id="rar-visual" type="checkbox"></label>
+        <label class="rar-setting-row">Sound alert <input id="rar-sound" type="checkbox"></label>
+        <label class="rar-setting-row">Auto refresh <select id="rar-mins">${[5,10,15,30].map(n=>`<option>${n}</option>`).join('')}</select></label>
         <small>Warning &lt;35% · Critical &lt;20%</small>
-      </aside>
+      </div>
     </div>`;
 
     document.body.append(root);
-    body=$('main',root);
+    panel=$('.rar-card',root);
+    body=$('.rar-main',root);
     status=$('.rar-status',root);
     mini=$('.rar-mini',root);
 
     $('#rar-refresh',root).onclick=()=>sync(true);
     $('#rar-mode',root).onclick=async()=>{ui.mode=ui.mode==='mini'?'full':'mini';await save();render()};
-    $('#rar-settings',root).onclick=()=>{
-      let a=$('aside',root);
+    $('#rar-settings-toggle',root).onclick=()=>{
+      let a=$('.rar-aside',root);
       a.hidden=!a.hidden;
-      $('#rar-desktop',root).checked=ui.desktop;
+      $('#rar-visual',root).checked=ui.visual;
       $('#rar-sound',root).checked=ui.sound;
       $('#rar-mins',root).value=ui.minutes;
     };
-    $('#rar-desktop',root).onchange=async e=>{ui.desktop=e.target.checked;await save()};
+    $('#rar-visual',root).onchange=async e=>{ui.visual=e.target.checked;await save()};
     $('#rar-sound',root).onchange=async e=>{ui.sound=e.target.checked;await save()};
     $('#rar-mins',root).onchange=async e=>{ui.minutes=+e.target.value;await save();schedule();render()};
 
@@ -133,8 +132,6 @@
     };
   }
 
-  // IMPORTANT: v1.1 searched the whole page, so it could "find" its own widget.
-  // v1.1.1 only accepts the native ChatGPT Usage panel, identified by "Plan limits".
   function nativeUsageText(){
     const dialogs=[...document.querySelectorAll('[role="dialog"],[aria-modal="true"]')];
     for(const n of dialogs){
@@ -143,7 +140,6 @@
       if(s.includes('Plan limits') && s.includes('5-hour limit') && s.includes('Weekly limit')) return s;
     }
 
-    // Fallback for a future ChatGPT markup change where Settings is not role="dialog".
     const candidates=[...document.querySelectorAll('h1,h2,h3,h4,[role="heading"],div,span,p')]
       .filter(n=>(n.textContent||'').trim()==='Plan limits');
 
@@ -152,7 +148,7 @@
       for(let depth=0; n && depth<9; depth++, n=n.parentElement){
         if(root && root.contains(n)) break;
         const s=n.innerText||'';
-        if(s.includes('5-hour limit') && s.includes('Weekly limit')) return s;
+        if(s.includes('Plan limits') && s.includes('5-hour limit') && s.includes('Weekly limit')) return s;
       }
     }
     return '';
@@ -178,15 +174,26 @@
     let prev=alerts[key]||'normal',rank={normal:0,warning:1,critical:2,unknown:-1};
     if(rank[lv]>rank[prev]&&lv!=='normal'&&typeof p==='number'){
       if(ui.sound)tone(lv);
-      if(ui.desktop)chrome.runtime.sendMessage({
-        type:'RAR_USAGE_NOTIFY',
-        level:lv,
-        title:lv==='critical'?'ChatGPT usage critically low':'ChatGPT usage getting low',
-        message:`${name}: ${p}% remaining.`
-      });
+      if(ui.visual)showToast(
+        lv==='critical'?'ChatGPT usage critically low':'ChatGPT usage getting low',
+        `${name}: ${p}% remaining.`,
+        lv
+      );
     }
     alerts[key]=lv;
     await save();
+  }
+
+  function showToast(title,message,lv){
+    try{
+      let old=$('.rar-toast',root); if(old) old.remove();
+      const t=document.createElement('div');
+      t.className='rar-toast rar-toast-'+lv;
+      t.innerHTML=`<b>${esc(title)}</b><span>${esc(message)}</span>`;
+      root.appendChild(t);
+      requestAnimationFrame(()=>t.classList.add('rar-toast-show'));
+      setTimeout(()=>{t.classList.remove('rar-toast-show');setTimeout(()=>t.remove(),220)},4200);
+    }catch{}
   }
 
   function tone(lv){
@@ -210,10 +217,7 @@
     const alreadyOnUsage=oldHash.toLowerCase()==='#settings/usage';
     const oldDisplay=root?.style.display||'';
 
-    // Hide our own widget while scanning so its labels can never be mistaken
-    // for the native Usage panel.
     if(root) root.style.display='none';
-
     if(!alreadyOnUsage) location.hash='#settings/Usage';
 
     try{
@@ -243,7 +247,7 @@
       await notify('week','Weekly limit',d.week.percent,level(d.week.percent));
       await save();
     }catch(err){
-      console.warn('[RAR Usage Monitor v1.1.1]',err);
+      console.warn('[RAR Usage Monitor v1.1.3]',err);
       d.status='Sync failed — open Settings › Usage once, then tap ↻';
       await save();
     }finally{
