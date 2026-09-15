@@ -1,73 +1,69 @@
-# RAR ChatGPT Usage Monitor v1.1.3
+# RAR ChatGPT Usage Monitor
 
-A lightweight Chrome/Chromium extension that keeps your ChatGPT usage limits visible while you chat.
+![Version](https://img.shields.io/badge/version-v1.2.0-2563eb)
+![Manifest](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
+![License](https://img.shields.io/badge/license-MIT-22c55e)
+![Status](https://img.shields.io/badge/status-stable-22c55e)
 
-## v1.1.3 stable hotfix
+A lightweight Chrome/Chromium extension that keeps your ChatGPT **5-hour** and **weekly** usage limits visible while you chat.
 
-- Removes the MV3 background service worker that could show Chrome error **Status code: 15** on some builds.
-- Removes the `notifications` permission and background process entirely.
-- Replaces OS desktop notifications with lightweight **on-screen threshold alerts** inside ChatGPT.
-- Keeps sound alerts, mini mode, warning/critical glow, native Usage sync, and fully scoped CSS.
-- Core extension now runs only as a content script + local storage for a simpler, cleaner install.
+## Screenshots
 
-## v1.1.2 hotfix
+### Full widget
+![Full widget](docs/screenshots/full-widget.png)
 
-- Fixes global CSS bleed that was affecting the ChatGPT page layout.
-- All widget styles are fully scoped under `#rar-chatgpt-usage-widget`.
-- Replaced generic semantic selectors with prefixed widget classes.
-- Keeps the usage data fix from v1.1.1.
+### Mini mode
+![Mini mode](docs/screenshots/mini-mode.png)
 
-## v1.1.1 hotfix
+## v1.2.0 highlights
 
-- Fixes the `Unknown` / long garbled reset text shown in v1.1.
-- Prevents the extension from reading its **own widget** as ChatGPT usage data.
-- Sync waits specifically for ChatGPT's native **Settings → Usage → Plan limits** panel.
-- Cleans corrupted v1.1 cached reset values automatically.
+- Native **Settings → Usage → Plan limits** sync.
+- 5-hour and weekly remaining percentage + reset countdown.
+- Full glass widget and compact mini pill mode.
+- Warning under 35%; critical under 20%.
+- On-screen alerts and optional sound alert.
+- Draggable position memory.
+- 5 / 10 / 15 / 30 minute refresh choices.
+- Optional public GitHub version check — no automatic install and no background service worker.
+- Sound is gated behind a browser user gesture to avoid AudioContext errors.
+- Fully scoped CSS; it does not style ChatGPT outside the widget.
+- Migrates compatible v1.1 local settings/data when possible.
 
-## Features
+## Installation
 
-- Mini pill mode — compact `5H xx% | W xx%` display
-- 5-hour and weekly usage remaining
-- Reset countdowns
-- Warning below 35%
-- Critical red glow below 20%
-- On-screen warning alerts
-- Optional sound alert
-- Auto-refresh: 5 / 10 / 15 / 30 minutes
-- Draggable position memory
-- Glass/blur UI
-- No password or OpenAI API key stored
-
-## Install / update
-
-1. Download and extract `RAR_ChatGPT_Usage_Monitor_v1.1.3.zip`.
-2. Open Chrome and go to `chrome://extensions/`.
-3. Remove the older RAR ChatGPT Usage Monitor version.
+1. Download `RAR_ChatGPT_Usage_Monitor_v1.2.0.zip`.
+2. Extract it.
+3. Open `chrome://extensions/`.
 4. Enable **Developer mode**.
-5. Click **Load unpacked**.
-6. Choose the extracted `RAR_ChatGPT_Usage_Monitor_v1.1.3` folder.
-7. Open or hard-refresh `https://chatgpt.com/`.
+5. Click **Load unpacked** and select the extracted folder.
+6. Refresh ChatGPT.
+
+Full guide: [docs/INSTALLATION.md](docs/INSTALLATION.md)
 
 ## Controls
 
-- `↻` — sync now
-- `—` — switch to mini mode
-- `▣` — expand from mini mode
-- `⚙` — alert and refresh settings
-- Drag the header to move the widget
+- `↻` sync now
+- `—` compact to mini mode
+- `▣` expand from mini mode
+- `⚙` alerts, refresh interval and version-check settings
+- Drag the widget header to move it
 
-## If sync fails
+## Update checker
 
-Open **ChatGPT → Settings → Usage** once, keep the Usage panel visible for a moment, then click `↻` on the widget. The extension reads the native **Plan limits** panel and will not parse its own widget.
+v1.2.0 can optionally check the repository's public `version.json`. If a newer version exists, the widget shows an update badge and a link to the GitHub Releases page. It **does not auto-install** anything.
 
 ## Privacy
 
-The extension does not ask for your ChatGPT password, session token, or OpenAI API key. It reads usage values rendered in your own logged-in ChatGPT page and stores only the last displayed values/settings in Chrome local storage.
+No password, OpenAI API key, session token, conversation text, or usage value is sent to the project author. See [docs/PRIVACY.md](docs/PRIVACY.md).
 
-## Compatibility note
+## Troubleshooting
 
-ChatGPT's web interface can change. If OpenAI changes the Usage page labels or route, the parser may need an update.
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
-## Version
+## Release notes
 
-Current release: **v1.1.3**
+See [RELEASE_v1.2.0.md](RELEASE_v1.2.0.md) and [CHANGELOG.md](CHANGELOG.md).
+
+## License
+
+MIT License.
