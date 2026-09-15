@@ -1,4 +1,4 @@
-const ICON = "icons/icon128.png";
+const ICON = "icons/icon48.png";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || message.type !== "RAR_USAGE_NOTIFY") return;
