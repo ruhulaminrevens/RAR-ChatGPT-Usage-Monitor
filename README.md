@@ -7,6 +7,14 @@
 
 A lightweight Chrome/Chromium extension that keeps your ChatGPT **5-hour** and **weekly** usage limits visible while you chat.
 
+## Download
+
+[⬇️ **Download RAR ChatGPT Usage Monitor v1.2.0 ZIP**](https://github.com/ruhulaminrevens/RAR-ChatGPT-Usage-Monitor/archive/refs/tags/v1.2.0.zip)
+
+[📦 View v1.2.0 Release](https://github.com/ruhulaminrevens/RAR-ChatGPT-Usage-Monitor/releases/tag/v1.2.0)
+
+> Extract the ZIP, open `chrome://extensions/`, enable **Developer mode**, then choose **Load unpacked** and select the extracted repository folder.
+
 ## Screenshots
 
 ### Full widget
@@ -37,7 +45,7 @@ A lightweight Chrome/Chromium extension that keeps your ChatGPT **5-hour** and *
 
 ## Installation
 
-1. Download `RAR_ChatGPT_Usage_Monitor_v1.2.0.zip` from the [v1.2.0 release](https://github.com/ruhulaminrevens/RAR-ChatGPT-Usage-Monitor/releases/tag/v1.2.0).
+1. [Download the v1.2.0 ZIP](https://github.com/ruhulaminrevens/RAR-ChatGPT-Usage-Monitor/archive/refs/tags/v1.2.0.zip).
 2. Extract it.
 3. Open `chrome://extensions/`.
 4. Enable **Developer mode**.
