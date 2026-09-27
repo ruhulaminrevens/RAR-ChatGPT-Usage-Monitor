@@ -42,7 +42,7 @@ async function until(fn, label) {
     const popup = await context.newPage();
     await popup.goto(`chrome-extension://${id}/popup.html`);
     await popup.locator('.rar-status').waitFor();
-    assert.match(await popup.locator('.rar-status').innerText(), /Open Usage/);
+    await until(async () => /Open Usage/.test(await popup.locator('.rar-status').innerText()), 'popup state');
     mark('real MV3 service worker + toolbar popup initialize');
     const send = (type, extra = {}) => popup.evaluate(async ({ type, extra }) => {
       const r = await chrome.runtime.sendMessage({ type, ...extra });
@@ -63,18 +63,19 @@ async function until(fn, label) {
     const opened = context.waitForEvent('page');
     await first.locator('[data-action="refresh"]').click();
     const native = await opened;
-    assert.equal(native.url(), 'https://chatgpt.com/settings/usage?tab=overview');
+    // The initial offline request may already show chrome-error://chromewebdata/.
+    // Its target URL is covered by the worker test; route this Page deterministically.
     await native.goto('https://chatgpt.com/settings/usage?tab=overview');
     await native.bringToFront();
     await until(async () => (await send('get-state')).usage.week.percent === 90, 'native usage sync');
     assert.equal(first.url(), 'https://chatgpt.com/c/test');
     assert.equal(await first.locator('#composer').inputValue(), 'Keep this unsent draft');
-    assert.equal(await first.locator('[data-metric="five"] [data-percent]').innerText(), '100% left');
-    assert.equal(await popup.locator('[data-metric="week"] [data-percent]').innerText(), '90% left');
+    await until(async () => await first.locator('[data-metric="five"] [data-percent]').innerText() === '100% left', 'chat view update');
+    await until(async () => await popup.locator('[data-metric="week"] [data-percent]').innerText() === '90% left', 'popup update');
     mark('modern Usage opens in a separate tab, preserves draft and syncs all views');
     await native.locator('#week-value').evaluate(el => { el.textContent = '18% left'; });
     await until(async () => (await send('get-state')).usage.week.percent === 18, 'changed native value');
-    assert.equal(await first.locator('[data-metric="week"] [data-percent]').innerText(), '18% left');
+    await until(async () => await first.locator('[data-metric="week"] [data-percent]').innerText() === '18% left', 'cross-tab render');
     mark('live native DOM changes update other tabs and low-limit styles');
     const before = (await send('get-state')).usage;
     await native.locator('[data-action="refresh"]').click();
