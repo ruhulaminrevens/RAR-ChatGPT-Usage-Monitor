@@ -169,7 +169,7 @@
       const b=text.slice(start,end);
       const p=b.match(/(\d{1,3}(?:\.\d+)?)\s*%\s*(?:left|remaining)?/i);
       const r=b.match(/(?:resets?|reset)\s+(?:in\s+)?([^\n]{1,40})/i);
-      const reset=r?r[1].replace(/\s+/g,' ').trim().replace(/[·|].*$/,'').trim():'Unknown';
+      const reset=r?r[1].replace(/\s+/g,' ').trim().replace(/\s+\d{1,3}(?:\.\d+)?\s*%.*$/,'').replace(/[·|].*$/,'').trim():'Unknown';
       return {percent:p?clamp(Math.round(+p[1]),0,100):null,reset:reset||'Unknown'};
     };
     return {
