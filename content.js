@@ -34,7 +34,7 @@
       for (const heading of headings) {
         // Only the native Plan limits section: never a conversation, code sample, or this widget.
         if (heading.closest('article,pre,code,[data-message-author-role],#' + HOST)) continue;
-        if (heading.children.length > 1 || !/^plan\s+limits?$/i.test(heading.textContent.trim()) || !visible(heading)) continue;
+        if (!/^plan\s+limits?$/i.test(heading.textContent.trim()) || !visible(heading)) continue;
         let node = heading.parentElement;
         for (let depth = 0; node && depth < 7 && node !== document.body; depth++, node = node.parentElement) {
           const text = node.innerText || '';
