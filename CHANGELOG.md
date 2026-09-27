@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.0 — upgrade candidate (2026-09-27)
+- Continued from main commit `90293b3`, including the merged v1.2.0 stability fixes.
+- Support the new native Usage page; preserve legacy dialogs without navigating chats.
+- Isolate CSS with Shadow DOM; add a shared toolbar popup and hide/restore controls.
+- Serialize local storage updates, preserve valid partial snapshots and deduplicate alerts across tabs.
+- Add reset deadlines, expiration/staleness states, strict percentage parsing and safe legacy migration.
+- Keep mini mode, pointer dragging, alerts and passive refresh; retire automatic Settings navigation.
+- Harden version checks with a worker, timeout, opt-in defaults and fixed trusted navigation.
+- Add unit/browser regression tests, reproducible named-folder ZIP and CI validation.
+- Authenticated live-account smoke testing remains a release gate; see docs/VALIDATION.md.
+
 ## v1.2.0
 - Promoted the stable v1.1.3 code line into a polished public release.
 - Added optional GitHub `version.json` update checks with a manual **Check now** action.

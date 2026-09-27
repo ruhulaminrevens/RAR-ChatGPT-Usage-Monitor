@@ -1,0 +1,18 @@
+const fs = require('node:fs');
+const { execFileSync } = require('node:child_process');
+const assert = require('node:assert/strict');
+const manifest = JSON.parse(fs.readFileSync('manifest.json'));
+const version = JSON.parse(fs.readFileSync('version.json'));
+const pkg = JSON.parse(fs.readFileSync('package.json'));
+assert.equal(manifest.manifest_version, 3);
+assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
+assert.equal(manifest.version, version.version); assert.equal(pkg.version, version.version);
+assert.deepEqual(manifest.permissions, ['storage']);
+const files = [manifest.background.service_worker, manifest.action.default_popup, ...Object.values(manifest.icons), ...manifest.content_scripts.flatMap(s => s.js), ...manifest.web_accessible_resources.flatMap(s => s.resources), 'popup.js', 'popup.css', 'LICENSE'];
+for (const file of files) assert.ok(fs.existsSync(file), `Missing asset: ${file}`);
+for (const file of [...new Set(files)].filter(f => f.endsWith('.js'))) execFileSync(process.execPath, ['--check', file]);
+assert.equal(manifest.content_scripts[0].css, undefined, 'Widget styles must stay inside Shadow DOM');
+const content = fs.readFileSync('content.js', 'utf8');
+assert.ok(content.includes('attachShadow'));
+assert.doesNotMatch(content, /location\.hash\s*=|history\.(?:pushState|replaceState)|document\.onmousemove/);
+console.log(`Validated Manifest V3, ${new Set(files).size} assets, JavaScript syntax, version metadata and isolated styles.`);
