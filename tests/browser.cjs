@@ -31,6 +31,10 @@ async function until(fn, label) {
     const url = new URL(route.request().url());
     return route.fulfill({ status: 200, contentType: 'text/html', body: url.pathname === '/settings/usage' ? pageHTML(usage) : chat });
   });
+  // Extension-created tabs can bypass the first Playwright route interception.
+  // Keep the browser offline so tests can never hit a real account/site, then
+  // navigate the now-observed Page through the fixture route explicitly.
+  await context.setOffline(true);
   try {
     let worker = context.serviceWorkers()[0];
     if (!worker) worker = await context.waitForEvent('serviceworker');
@@ -59,7 +63,8 @@ async function until(fn, label) {
     const opened = context.waitForEvent('page');
     await first.locator('[data-action="refresh"]').click();
     const native = await opened;
-    await native.waitForURL('https://chatgpt.com/settings/usage?tab=overview');
+    assert.equal(native.url(), 'https://chatgpt.com/settings/usage?tab=overview');
+    await native.goto('https://chatgpt.com/settings/usage?tab=overview');
     await native.bringToFront();
     await until(async () => (await send('get-state')).usage.week.percent === 90, 'native usage sync');
     assert.equal(first.url(), 'https://chatgpt.com/c/test');
