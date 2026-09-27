@@ -52,7 +52,8 @@ async function handle(message, sender) {
   if (message.type === 'get-state') return state();
   if (message.type === 'open-usage') {
     // Opening a new tab is only requested by an explicit control click. Never navigate a chat.
-    const existing = (await chrome.tabs.query({ url: 'https://chatgpt.com/settings/usage*' })).find(t => t.windowId === sender.tab?.windowId);
+    const candidates = await chrome.tabs.query({ url: 'https://chatgpt.com/settings/usage*', ...(sender.tab ? { windowId: sender.tab.windowId } : { currentWindow: true }) });
+    const existing = candidates.find(t => C.isUsageRoute(t.url));
     if (existing) { await chrome.tabs.update(existing.id, { active: true }); return {}; }
     await chrome.tabs.create({ url: C.USAGE_URL });
     return {};

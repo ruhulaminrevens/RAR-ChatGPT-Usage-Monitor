@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 
-function worker(seed = {}, fetcher = async () => { throw new Error('Offline'); }) {
-  const data = structuredClone(seed), tabs = [];
+function worker(seed = {}, fetcher = async () => { throw new Error('Offline'); }, existing = []) {
+  const data = structuredClone(seed), tabs = [], queries = [];
   let listener;
   const context = vm.createContext({ URL, setTimeout, clearTimeout, AbortController, fetch: fetcher, console });
   context.chrome = {
@@ -13,12 +13,12 @@ function worker(seed = {}, fetcher = async () => { throw new Error('Offline'); }
       get: async keys => { await new Promise(r => setImmediate(r)); return Object.fromEntries(keys.filter(k => k in data).map(k => [k, structuredClone(data[k])])); },
       set: async patch => { await new Promise(r => setImmediate(r)); Object.assign(data, structuredClone(patch)); }
     } },
-    tabs: { query: async () => [], create: async tab => tabs.push(tab), update: async () => {} }
+    tabs: { query: async query => { queries.push(query); return existing; }, create: async tab => tabs.push(tab), update: async id => tabs.push({ activated: id }) }
   };
   context.importScripts = path => vm.runInContext(fs.readFileSync(require.resolve('../' + path), 'utf8'), context);
   vm.runInContext(fs.readFileSync(require.resolve('../background.js'), 'utf8'), context);
   const send = message => new Promise(resolve => listener(message, { id: 'test', url: 'https://chatgpt.com/settings/usage', tab: { windowId: 1 } }, resolve));
-  return { send, data, tabs, listener };
+  return { send, data, tabs, queries, listener };
 }
 
 test('serialized settings patches preserve independent concurrent changes', async () => {
@@ -82,4 +82,10 @@ test('messages from other extensions and websites are rejected', () => {
   const w = worker();
   assert.equal(w.listener({ type: 'open-usage' }, { id: 'other', url: 'https://chatgpt.com/' }, () => {}), false);
   assert.equal(w.listener({ type: 'open-usage' }, { id: 'test', url: 'https://evil.invalid/' }, () => {}), false);
+});
+test('toolbar popup reuses the current window Usage tab instead of creating duplicates', async () => {
+  const w = worker({}, undefined, [{ id: 42, url: 'https://chatgpt.com/settings/usage?tab=overview' }]);
+  await new Promise(resolve => w.listener({ type: 'open-usage' }, { id: 'test', url: 'chrome-extension://test/popup.html' }, resolve));
+  assert.equal(w.queries[0].currentWindow, true);
+  assert.equal(w.tabs.length, 1); assert.equal(w.tabs[0].activated, 42);
 });
