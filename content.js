@@ -6,7 +6,7 @@
   const RELEASES_URL='https://github.com/ruhulaminrevens/RAR-ChatGPT-Usage-Monitor/releases';
   const K='rar_usage_v12', U='rar_ui_v12', A='rar_alert_v12', V='rar_version_v12';
   const D={five:{percent:null,reset:'Unknown'},week:{percent:null,reset:'Unknown'},updated:null,status:'Waiting for valid sync…'};
-  const UI={mode:'full',top:105,right:18,minutes:10,visual:true,sound:true,updateChecks:true};
+  const UI={mode:'full',top:105,right:18,minutes:10,visual:true,sound:true,updateChecks:true,autoNavigate:false};
   const VS={latest:CURRENT_VERSION,checked:0,status:'Not checked',url:RELEASES_URL};
 
   let d={...D},ui={...UI},alerts={five:'normal',week:'normal'},versionState={...VS};
@@ -87,6 +87,7 @@
         <label class="rar-setting-row">On-screen alerts <input id="rar-visual" type="checkbox"></label>
         <label class="rar-setting-row">Sound alert <input id="rar-sound" type="checkbox"></label>
         <label class="rar-setting-row">Auto refresh <select id="rar-mins">${[5,10,15,30].map(n=>`<option>${n}</option>`).join('')}</select></label>
+        <label class="rar-setting-row">Auto-open Usage <input id="rar-auto-nav" type="checkbox"></label>
         <label class="rar-setting-row">Version checks <input id="rar-updates" type="checkbox"></label>
         <div class="rar-version-tools"><button id="rar-check-update" class="rar-check-btn">Check now</button><button id="rar-release-page" class="rar-check-btn rar-secondary">Releases ↗</button></div>
         <div id="rar-version-status" class="rar-version-status"></div>
@@ -100,6 +101,7 @@
     $('#rar-visual',root).onchange=async e=>{ui.visual=e.target.checked;await save()};
     $('#rar-sound',root).onchange=async e=>{ui.sound=e.target.checked;await save(); if(ui.sound) tone('warning',true)};
     $('#rar-mins',root).onchange=async e=>{ui.minutes=+e.target.value;await save();schedule();render()};
+    $('#rar-auto-nav',root).onchange=async e=>{ui.autoNavigate=e.target.checked;await save();render()};
     $('#rar-updates',root).onchange=async e=>{ui.updateChecks=e.target.checked;await save();scheduleVersionChecks()};
     $('#rar-check-update',root).onclick=()=>checkVersion(true);
     $('#rar-release-page',root).onclick=openRelease;
@@ -108,29 +110,88 @@
 
   function syncSettingsControls(){
     if(!root)return;
-    $('#rar-visual',root).checked=ui.visual; $('#rar-sound',root).checked=ui.sound; $('#rar-mins',root).value=ui.minutes; $('#rar-updates',root).checked=ui.updateChecks;
+    $('#rar-visual',root).checked=ui.visual; $('#rar-sound',root).checked=ui.sound; $('#rar-mins',root).value=ui.minutes; $('#rar-auto-nav',root).checked=!!ui.autoNavigate; $('#rar-updates',root).checked=ui.updateChecks;
   }
 
   function drag(h){
-    let on=0,x=0,y=0,t=0,r=0;
-    h.onmousedown=e=>{if(e.target.closest('button'))return; on=1;x=e.clientX;y=e.clientY;t=ui.top;r=ui.right;
-      document.onmousemove=m=>{if(!on)return;ui.top=clamp(t+m.clientY-y,8,innerHeight-60);ui.right=clamp(r-m.clientX+x,8,innerWidth-100);root.style.top=ui.top+'px';root.style.right=ui.right+'px'};
-      document.onmouseup=async()=>{on=0;document.onmousemove=document.onmouseup=null;await save()};
-    };
+    let state=null;
+    h.addEventListener('pointerdown',e=>{
+      if(e.button!==0||e.target.closest('button'))return;
+      state={id:e.pointerId,x:e.clientX,y:e.clientY,top:ui.top,right:ui.right};
+      try{h.setPointerCapture(e.pointerId)}catch{}
+      const move=m=>{
+        if(!state||m.pointerId!==state.id)return;
+        ui.top=clamp(state.top+m.clientY-state.y,8,Math.max(8,innerHeight-60));
+        ui.right=clamp(state.right-m.clientX+state.x,8,Math.max(8,innerWidth-100));
+        root.style.top=ui.top+'px';root.style.right=ui.right+'px';
+      };
+      const end=async m=>{
+        if(!state||m.pointerId!==state.id)return;
+        h.removeEventListener('pointermove',move);
+        h.removeEventListener('pointerup',end);
+        h.removeEventListener('pointercancel',end);
+        try{h.releasePointerCapture(m.pointerId)}catch{}
+        state=null;await save();
+      };
+      h.addEventListener('pointermove',move);
+      h.addEventListener('pointerup',end);
+      h.addEventListener('pointercancel',end);
+    });
   }
 
   function nativeUsageText(){
+    const hasLimits=s=>/5[\s-]*hour(?:\s+limit)?/i.test(s)&&/weekly(?:\s+limit)?/i.test(s);
     const dialogs=[...document.querySelectorAll('[role="dialog"],[aria-modal="true"]')];
-    for(const n of dialogs){if(root&&root.contains(n))continue;const s=n?.innerText||'';if(s.includes('Plan limits')&&s.includes('5-hour limit')&&s.includes('Weekly limit'))return s}
-    const candidates=[...document.querySelectorAll('h1,h2,h3,h4,[role="heading"],div,span,p')].filter(n=>(n.textContent||'').trim()==='Plan limits');
-    for(const anchor of candidates){let n=anchor;for(let depth=0;n&&depth<9;depth++,n=n.parentElement){if(root&&root.contains(n))break;const s=n.innerText||'';if(s.includes('5-hour limit')&&s.includes('Weekly limit'))return s}}
+    for(const n of dialogs){
+      if(root&&root.contains(n))continue;
+      const s=n?.innerText||'';
+      if(hasLimits(s))return s;
+    }
+    const candidates=[...document.querySelectorAll('h1,h2,h3,h4,[role="heading"]')]
+      .filter(n=>/(plan\s+limits?|usage\s+limits?)/i.test((n.textContent||'').trim()));
+    for(const anchor of candidates){
+      let n=anchor;
+      for(let depth=0;n&&depth<10;depth++,n=n.parentElement){
+        if(root&&root.contains(n))break;
+        const s=n.innerText||'';
+        if(hasLimits(s))return s;
+      }
+    }
     return '';
   }
 
-  function parseSection(s,label,nextLabel){
-    const i=s.indexOf(label);if(i<0)return null;let end=nextLabel?s.indexOf(nextLabel,i+label.length):-1;if(end<0)end=Math.min(s.length,i+500);const b=s.slice(i,end);
-    const p=b.match(/(\d{1,3})%\s*left/i); const r=b.match(/Resets in\s+((?:\d+\s*d(?:\s+\d+\s*h)?(?:\s+\d+\s*m)?)|(?:\d+\s*h(?:\s+\d+\s*m)?)|(?:\d+\s*m))/i);
-    return {percent:p?clamp(+p[1],0,100):null,reset:r?r[1].replace(/\s+/g,' ').trim():'Unknown'};
+  function parseUsageText(s){
+    const text=String(s||'').replace(/\r/g,'');
+    const section=(startRe,endRe)=>{
+      const m=startRe.exec(text);if(!m)return null;
+      const start=m.index,endMatch=endRe.exec(text.slice(start+m[0].length));
+      const end=endMatch?start+m[0].length+endMatch.index:Math.min(text.length,start+700);
+      const b=text.slice(start,end);
+      const p=b.match(/(\d{1,3}(?:\.\d+)?)\s*%\s*(?:left|remaining)?/i);
+      const r=b.match(/(?:resets?|reset)\s+(?:in\s+)?([^\n]{1,40})/i);
+      const reset=r?r[1].replace(/\s+/g,' ').trim().replace(/[·|].*$/,'').trim():'Unknown';
+      return {percent:p?clamp(Math.round(+p[1]),0,100):null,reset:reset||'Unknown'};
+    };
+    return {
+      five:section(/5[\s-]*hour(?:\s+limit)?/i,/weekly(?:\s+limit)?/i),
+      week:section(/weekly(?:\s+limit)?/i,/(?:usage\s+limit\s+resets?|reset\s+history|available\s+resets?)/i)
+    };
+  }
+
+  function isUserBusy(){
+    const a=document.activeElement;
+    if(!a)return false;
+    return !!(a.matches?.('textarea,input,[contenteditable="true"]')||a.closest?.('[contenteditable="true"]'));
+  }
+
+  async function applyUsageText(s){
+    const parsed=parseUsageText(s),f=parsed.five,w=parsed.week;
+    if(!f||!w||(f.percent==null&&w.percent==null))throw new Error('Native Usage values not readable');
+    if(f)d.five=f;if(w)d.week=w;
+    d.updated=Date.now();d.status=(d.five.percent!=null&&d.week.percent!=null)?'Synced':'Partially synced';
+    await notify('five','5-hour limit',d.five.percent,level(d.five.percent));
+    await notify('week','Weekly limit',d.week.percent,level(d.week.percent));
+    await save();
   }
 
   async function notify(key,name,p,lv){
@@ -153,16 +214,54 @@
   }
 
   async function sync(manual=false){
-    if(syncing)return;syncing=true;d.status=manual?'Opening native Usage…':'Checking native Usage…';render();
+    if(syncing)return;
+    if(!manual&&(document.hidden||isUserBusy())){d.status='Cached · auto-sync deferred';render();return}
+
+    const passive=nativeUsageText();
+    if(passive){
+      syncing=true;d.status='Reading Usage…';render();
+      try{await applyUsageText(passive)}
+      catch(err){console.warn('[RAR Usage Monitor v1.2.0]',err);d.status='Usage panel found, but values could not be read';await save()}
+      finally{syncing=false;render()}
+      return;
+    }
+
+    if(!manual&&!ui.autoNavigate){
+      d.status=d.updated?'Cached · tap ↻ to sync':'Tap ↻ to sync';
+      render();
+      return;
+    }
+
+    syncing=true;d.status=manual?'Opening native Usage…':'Background sync…';render();
     const oldHash=location.hash||'',alreadyOnUsage=oldHash.toLowerCase()==='#settings/usage',oldDisplay=root?.style.display||'';
-    if(root)root.style.display='none';if(!alreadyOnUsage)location.hash='#settings/Usage';
+    if(root)root.style.display='none';
     try{
-      let s='';for(let i=0;i<30;i++){await wait(350);s=nativeUsageText();if(s)break}if(!s)throw new Error('Native Usage panel not found');
-      const f=parseSection(s,'5-hour limit','Weekly limit'),w=parseSection(s,'Weekly limit','Usage limit resets');if(!f||!w||(f.percent==null&&w.percent==null))throw new Error('Native Usage values not readable');
-      if(f)d.five=f;if(w)d.week=w;d.updated=Date.now();d.status=(d.five.percent!=null&&d.week.percent!=null)?'Synced':'Partially synced';
-      await notify('five','5-hour limit',d.five.percent,level(d.five.percent));await notify('week','Weekly limit',d.week.percent,level(d.week.percent));await save();
-    }catch(err){console.warn('[RAR Usage Monitor v1.2.0]',err);d.status='Sync failed — open Settings › Usage once, then tap ↻';await save()}
-    finally{if(!alreadyOnUsage){await wait(200);if(oldHash)location.hash=oldHash;else{location.hash='';await wait(80);history.replaceState(null,'',location.pathname+location.search)}}if(root)root.style.display=oldDisplay;syncing=false;render()}
+      let s='';
+      if(!alreadyOnUsage){
+        for(const route of ['#settings/Usage','#settings/usage']){
+          location.hash=route;
+          for(let i=0;i<12;i++){await wait(300);s=nativeUsageText();if(s)break}
+          if(s)break;
+        }
+      }else s=nativeUsageText();
+      if(!s){
+        for(let i=0;i<8;i++){await wait(300);s=nativeUsageText();if(s)break}
+      }
+      if(!s)throw new Error('Native Usage panel not found');
+      await applyUsageText(s);
+    }catch(err){
+      console.warn('[RAR Usage Monitor v1.2.0]',err);
+      d.status='Sync failed · open Settings › Usage once, then tap ↻';
+      await save();
+    }finally{
+      if(!alreadyOnUsage){
+        await wait(120);
+        if(oldHash)location.hash=oldHash;
+        else{location.hash='';await wait(60);history.replaceState(null,'',location.pathname+location.search)}
+      }
+      if(root)root.style.display=oldDisplay;
+      syncing=false;render();
+    }
   }
 
   function compareVersions(a,b){
@@ -188,10 +287,24 @@
   }
 
   function schedule(){clearInterval(timer);timer=setInterval(()=>sync(false),clamp(ui.minutes,5,60)*60000)}
+  function clampWidgetToViewport(){
+    ui.top=clamp(ui.top,8,Math.max(8,innerHeight-60));
+    ui.right=clamp(ui.right,8,Math.max(8,innerWidth-100));
+    if(root){root.style.top=ui.top+'px';root.style.right=ui.right+'px'}
+  }
   function scheduleVersionChecks(){
     clearInterval(versionTimer);if(!ui.updateChecks)return;versionTimer=setInterval(()=>checkVersion(false),12*60*60*1000);
     if(!versionState.checked||Date.now()-versionState.checked>6*60*60*1000)setTimeout(()=>checkVersion(false),8000);
   }
 
-  (async()=>{await load();mount();schedule();scheduleVersionChecks();setTimeout(()=>sync(false),2500);setInterval(mount,3000)})();
+  (async()=>{
+    await load();mount();schedule();scheduleVersionChecks();clampWidgetToViewport();
+    setTimeout(()=>sync(false),2500);
+    const observer=new MutationObserver(()=>{if(!document.getElementById('rar-chatgpt-usage-widget'))mount()});
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+    addEventListener('resize',clampWidgetToViewport,{passive:true});
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden&&d.updated&&Date.now()-d.updated>clamp(ui.minutes,5,60)*60000)setTimeout(()=>sync(false),1200);
+    });
+  })();
 })();
