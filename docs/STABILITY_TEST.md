@@ -1,29 +1,13 @@
-# Stability test checklist
+# Authenticated smoke test before a public release
 
-This branch is a stabilization pass for the current v1.2.0 codebase. It does not create a new public release yet.
+Automated tests use synthetic native-page fixtures. They cannot establish compatibility with every live ChatGPT account, plan, language or future DOM change.
 
-## What changed
+1. Update the existing unpacked folder, reload the extension and refresh ChatGPT. Confirm **v1.3.0** in the toolbar popup settings and only one widget.
+2. Open your live **Settings → Usage** page. Compare both native percentages and reset text with the widget. If one limit is unavailable, its old reading must retain its own age.
+3. Return to a conversation. Type an unsent draft, then click the widget sync arrow. Usage should open separately and the draft/conversation should stay unchanged.
+4. In another ChatGPT tab, confirm the latest reading is shared. Verify mini/full mode, hide/restore, drag, Reset position and a narrow browser window.
+5. Leave Usage closed: the widget must label data as cached. It must never open Settings automatically, refill expired percentages, or spend a reset/credit.
+6. If you switch ChatGPT accounts/workspaces, clear cached data and sync the intended account before relying on it.
+7. Confirm there are no repeated errors on the extension's `chrome://extensions/` card. Check version updates only if wanted.
 
-- Automatic refresh is now **passive by default**. It will not force-open ChatGPT Settings while you are typing or simply reading a chat.
-- Manual `↻` sync can still open **Settings → Usage** when needed.
-- New **Auto-open Usage** setting restores forced background sync for users who explicitly want it.
-- Usage parsing accepts more label variations instead of relying only on exact English strings.
-- Dragging uses pointer capture instead of assigning global `document.onmousemove/onmouseup` handlers.
-- The widget remounts through `MutationObserver` instead of a permanent 3-second polling loop.
-- Auto-sync is deferred while the tab is hidden or an input/editor is active.
-- Widget position is clamped after browser resize.
-
-## Test cases
-
-1. Open ChatGPT and keep **Auto-open Usage** OFF. The extension should not interrupt the current chat.
-2. Press `↻`. Usage should sync and the original chat should remain selected afterward.
-3. Start typing in the composer and wait for the refresh interval. Settings should not open.
-4. Drag the widget several times; ChatGPT mouse/pointer behavior should remain normal.
-5. Open ChatGPT **Settings → Usage** manually. The widget should passively read the values.
-6. Turn **Auto-open Usage** ON and verify the old automatic sync behavior only if you want it.
-7. Resize the browser window and confirm the widget remains reachable.
-8. Check mini mode, alerts, sound setting, and version check.
-
-## Release rule
-
-After these tests pass in Chrome, this branch can be versioned and released as the next maintenance release.
+Record the Chrome version, extension version and any failing screenshot/error. A GitHub release/tag and Chrome Web Store publication are separate actions; this upgrade does not claim either has happened.

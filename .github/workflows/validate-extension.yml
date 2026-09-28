@@ -1,57 +1,32 @@
 name: Validate extension
-
 on:
   push:
-    branches:
-      - main
-      - "fix/**"
+    branches: [main, 'fix/**', 'upgrade/**']
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
 permissions:
   contents: read
-
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-
-      - name: JavaScript syntax
-        run: node --check content.js
-
-      - name: Validate manifest and version metadata
-        shell: node {0}
-        run: |
-          const fs = require("fs");
-          const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
-          const version = JSON.parse(fs.readFileSync("version.json", "utf8"));
-          if (manifest.manifest_version !== 3) throw new Error("Manifest V3 required");
-          if (!/^\d+\.\d+\.\d+$/.test(manifest.version)) throw new Error("Invalid extension version");
-          if (version.version !== manifest.version) throw new Error("version.json must match manifest.json");
-          for (const file of ["content.js", "styles.css", "README.md"]) {
-            if (!fs.existsSync(file)) throw new Error(`Missing required file: ${file}`);
-          }
-
-      - name: Check CSS scoping
-        shell: node {0}
-        run: |
-          const fs = require("fs");
-          const css = fs.readFileSync("styles.css", "utf8");
-          const bad = css
-            .split("}")
-            .map(x => x.trim())
-            .filter(Boolean)
-            .map(x => x.split("{")[0].trim())
-            .filter(sel => sel && !sel.startsWith("@") && sel.split(",").some(s => !s.trim().startsWith("#rar-chatgpt-usage-widget")));
-          if (bad.length) {
-            console.error("Unscoped selectors:", bad);
-            process.exit(1);
-          }
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run validate && npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - run: npm run package
+      - name: Check reproducible distribution
+        run: git diff --exit-code -- dist/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: extension-and-validation
+          path: |
+            dist/
+            test-results/

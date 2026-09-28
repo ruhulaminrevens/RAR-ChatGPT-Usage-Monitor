@@ -1,0 +1,18 @@
+{
+  "name": "rar-chatgpt-usage-monitor",
+  "version": "1.3.0",
+  "private": true,
+  "description": "Development and validation tools; no runtime npm dependencies",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "validate": "node scripts/validate.cjs",
+    "test:browser": "node tests/browser.cjs",
+    "package": "python3 scripts/package.py"
+  },
+  "devDependencies": {
+    "playwright": "1.58.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
